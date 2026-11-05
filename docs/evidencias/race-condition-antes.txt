@@ -1,0 +1,29 @@
+# EVIDÊNCIA DO 'ANTES' — race condition em ContaInsegura (sem sincronização)
+# Gerado em: 2026-11-04 16:22:25 +0000
+# Comando : java -Dstdout.encoding=UTF-8 -cp target/classes simulacao.didatico.DemonstracaoRaceCondition 10 50000
+# Ambiente: openjdk version "21.0.12.1" 2026-08-18 | 1 núcleo(s) de CPU
+# Observação: a divergência NÃO é garantida em toda execução (depende do escalonamento);
+#             os números abaixo são de UMA execução real e mudam a cada rodada.
+#
+=== Demonstração de race condition (ContaInsegura) ===
+Java                : 21.0.12.1
+Núcleos disponíveis : 1
+Threads de depósito : 4 x 50000 x R$ 10.00
+Threads de saque    : 4 x 50000 x R$ 5.00
+Saldo inicial       : R$ 1000000.00
+Saldo ESPERADO      : R$ 2000000.00
+
+Controle sequencial (1 thread): esperado=R$ 2000000.00 | observado=R$ 2000000.00 | OK
+
+Rodada 1: esperado=R$ 2000000.00 | observado=R$ 2000000.00 | diferença=R$ 0.00 | igual (nesta execução)
+Rodada 2: esperado=R$ 2000000.00 | observado=R$ 1234025.00 | diferença=R$ -765975.00 | DIVERGIU
+Rodada 3: esperado=R$ 2000000.00 | observado=R$ 1895420.00 | diferença=R$ -104580.00 | DIVERGIU
+Rodada 4: esperado=R$ 2000000.00 | observado=R$ 1334070.00 | diferença=R$ -665930.00 | DIVERGIU
+Rodada 5: esperado=R$ 2000000.00 | observado=R$ 1169770.00 | diferença=R$ -830230.00 | DIVERGIU
+Rodada 6: esperado=R$ 2000000.00 | observado=R$ 1749600.00 | diferença=R$ -250400.00 | DIVERGIU
+Rodada 7: esperado=R$ 2000000.00 | observado=R$ 1500000.00 | diferença=R$ -500000.00 | DIVERGIU
+Rodada 8: esperado=R$ 2000000.00 | observado=R$ 1500000.00 | diferença=R$ -500000.00 | DIVERGIU
+Rodada 9: esperado=R$ 2000000.00 | observado=R$ 2000000.00 | diferença=R$ 0.00 | igual (nesta execução)
+Rodada 10: esperado=R$ 2000000.00 | observado=R$ 1250000.00 | diferença=R$ -750000.00 | DIVERGIU
+
+Rodadas com divergência: 8 de 10

@@ -1,0 +1,18 @@
+# EVIDÊNCIA: testes de concorrência executados contra a Conta SEM sincronização (versão sequencial)
+# Gerado em: 2026-11-04 16:24:24 +0000 | openjdk version "21.0.12.1" 2026-08-18 | 1 núcleo(s)
+# Executor : MiniRunner local (shim de JUnit, fora do projeto) — NÃO é o JUnit/Maven real.
+# Resultado esperado: os testes FALHAM, provando que detectam a race condition.
+# Observação: 5 execuções consecutivas, todas com 5 de 5 testes falhando (25/25).
+#
+FALHOU  ContaConcorrenciaTest.depositosConcorrentesNaMesmaConta  [Depósitos concorrentes na mesma conta não perdem atualizações]
+        -> java.lang.AssertionError: expected: <1600000.00> but was: <1089530.00>
+FALHOU  ContaConcorrenciaTest.saquesConcorrentesNaMesmaConta  [Saques concorrentes na mesma conta não perdem atualizações]
+        -> java.lang.AssertionError: expected: <0.00> but was: <1320870.00>
+FALHOU  ContaConcorrenciaTest.saquesConcorrentesComSaldoLimitado  [Saques concorrentes com saldo limitado: só o que cabe no saldo é aceito (verificar e agir é atômico)]
+        -> java.lang.AssertionError: Saques aceitos incorretos na rodada 1 ==> expected: <200000> but was: <318477>
+FALHOU  ContaConcorrenciaTest.depositosESaquesConcorrentesRepetidosEmVariasRodadas  [Depósitos e saques concorrentes na mesma conta (mesma carga da demonstração histórica) dão o saldo esperado em todas as rodadas]
+        -> java.lang.AssertionError: Saldo incorreto na rodada 2 ==> expected: <2000000.00> but was: <832345.00>
+FALHOU  ContaConcorrenciaTest.transferenciasConcorrentesJuntoComDepositosESaques  [Transferências concorrentes em sentidos opostos, junto com depósitos e saques, preservam os saldos e não travam]
+        -> java.lang.AssertionError: expected: <9900000.00> but was: <9915955.00>
+
+Resumo: 0 passaram, 5 falharam

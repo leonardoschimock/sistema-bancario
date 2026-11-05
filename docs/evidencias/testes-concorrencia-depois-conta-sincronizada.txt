@@ -1,0 +1,28 @@
+# EVIDÊNCIA DO 'DEPOIS': suíte completa contra a Conta SINCRONIZADA
+# Gerado em: 2026-11-05 17:09:49 +0000 | openjdk version "21.0.12.1" 2026-08-18 | 1 núcleo(s) | -ea
+# Executor : MiniRunner local (shim de JUnit, fora do projeto) — NÃO é o JUnit/Maven real.
+# Esta execução abaixo é a primeira de 10 consecutivas; todas deram 21 passaram, 0 falharam.
+#
+PASSOU  ContaTest.depositoAumentaSaldo  [Depósito aumenta o saldo corretamente] (5 ms)
+PASSOU  ContaTest.depositosSucessivosSeAcumulam  [Depósitos sucessivos se acumulam] (0 ms)
+PASSOU  ContaTest.saqueValidoReduzSaldo  [Saque válido reduz o saldo corretamente] (0 ms)
+PASSOU  ContaTest.saqueDoSaldoExatoZeraConta  [Saque do valor exato do saldo é permitido e zera a conta] (0 ms)
+PASSOU  ContaTest.saqueComSaldoInsuficienteEhRecusadoEPreservaSaldo  [Saque com saldo insuficiente é recusado e preserva o saldo] (8 ms)
+PASSOU  ContaTest.transferenciaValidaDebitaOrigemECreditaDestino  [Transferência válida debita a origem e credita o destino] (0 ms)
+PASSOU  ContaTest.transferenciaComSaldoInsuficienteNaoAlteraNenhumaConta  [Transferência com saldo insuficiente não altera nenhuma das contas] (0 ms)
+PASSOU  ContaTest.transferenciaComValorInvalidoNaoAlteraNenhumaConta  [Transferência com valor inválido não altera nenhuma das contas] (0 ms)
+PASSOU  ContaTest.transferenciaParaDestinoNuloPreservaOrigem  [Transferência para destino nulo é recusada e preserva a origem] (0 ms)
+PASSOU  ContaTest.transferenciaParaMesmaContaEhRecusada  [Transferência para a própria conta é recusada e preserva o saldo] (0 ms)
+PASSOU  TransacaoTest.registraTipoValorEHorario  [Transação registra tipo, valor e horário informados] (1 ms)
+PASSOU  TransacaoTest.construtorSemHorarioUsaMomentoAtual  [Construtor sem horário usa o momento da criação] (17 ms)
+PASSOU  TransacaoTest.recusaTipoNulo  [Tipo nulo é recusado] (0 ms)
+PASSOU  TransacaoTest.recusaValorInvalido  [Valor nulo, zero ou negativo é recusado] (1 ms)
+PASSOU  TransacaoTest.recusaHorarioNulo  [Horário nulo é recusado] (2 ms)
+PASSOU  TransacaoTest.ehImutavel  [Transação é imutável: classe final e atributos privados e finais] (0 ms)
+PASSOU  ContaConcorrenciaTest.depositosESaquesConcorrentesRepetidosEmVariasRodadas  [Depósitos e saques concorrentes na mesma conta (mesma carga da demonstração histórica) dão o saldo esperado em todas as rodadas] (322 ms)
+PASSOU  ContaConcorrenciaTest.depositosConcorrentesNaMesmaConta  [Depósitos concorrentes na mesma conta não perdem atualizações] (31 ms)
+PASSOU  ContaConcorrenciaTest.saquesConcorrentesNaMesmaConta  [Saques concorrentes na mesma conta não perdem atualizações] (44 ms)
+PASSOU  ContaConcorrenciaTest.saquesConcorrentesComSaldoLimitado  [Saques concorrentes com saldo limitado: só o que cabe no saldo é aceito (verificar e agir é atômico)] (675 ms)
+PASSOU  ContaConcorrenciaTest.transferenciasConcorrentesJuntoComDepositosESaques  [Transferências concorrentes em sentidos opostos, junto com depósitos e saques, preservam os saldos e não travam] (77 ms)
+
+Resumo: 21 passaram, 0 falharam
