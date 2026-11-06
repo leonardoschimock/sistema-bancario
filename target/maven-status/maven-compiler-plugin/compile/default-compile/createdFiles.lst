@@ -1,7 +1,0 @@
-domain\Conta.class
-simulacao\didatico\DemonstracaoRaceCondition.class
-domain\TipoTransacao.class
-domain\SaldoInsuficienteException.class
-simulacao\didatico\ContaInsegura.class
-domain\Cliente.class
-domain\Transacao.class
