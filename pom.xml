@@ -13,6 +13,11 @@
         <!-- Compila em qualquer JDK >= 21 (inclusive o Java 25 do projeto). -->
         <maven.compiler.release>21</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <!-- Testes de integração (precisam do banco) ficam FORA do "mvn test" comum.
+             Para executá-los: mvn test -Pintegracao  (veja a seção de profiles). -->
+        <excluded.tags>integracao</excluded.tags>
+        <included.tags></included.tags>
     </properties>
 
     <dependencies>
@@ -21,6 +26,21 @@
             <artifactId>junit-jupiter</artifactId>
             <version>5.11.4</version>
             <scope>test</scope>
+        </dependency>
+
+        <!-- Driver JDBC oficial do MySQL (URL jdbc:mysql://). A protobuf-java só serve ao X DevAPI,
+             que não usamos, então é excluída. -->
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+            <version>9.6.0</version>
+            <scope>runtime</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.google.protobuf</groupId>
+                    <artifactId>protobuf-java</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
     </dependencies>
 
@@ -31,7 +51,22 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.5.2</version>
+                <configuration>
+                    <excludedGroups>${excluded.tags}</excludedGroups>
+                    <groups>${included.tags}</groups>
+                </configuration>
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <!-- mvn test -Pintegracao : roda SOMENTE os testes marcados com @Tag("integracao"). -->
+        <profile>
+            <id>integracao</id>
+            <properties>
+                <excluded.tags></excluded.tags>
+                <included.tags>integracao</included.tags>
+            </properties>
+        </profile>
+    </profiles>
 </project>

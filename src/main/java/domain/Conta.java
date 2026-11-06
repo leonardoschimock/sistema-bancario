@@ -97,6 +97,13 @@ public class Conta {
     /** Estado compartilhado. Só pode ser lido ou escrito dentro de {@code synchronized (lock)}. */
     private BigDecimal saldo;
 
+    /**
+     * Identificador da linha desta conta no banco (chave primária). É {@code null} enquanto a conta
+     * não foi persistida. NÃO é o {@link #id} usado para ordenar locks: aquele é gerado por um
+     * contador em memória e reinicia a cada execução. Acesso protegido por {@code lock}.
+     */
+    private Long idPersistencia;
+
     public Conta(Cliente titular, BigDecimal saldoInicial) {
         if (titular == null) {
             throw new IllegalArgumentException("O titular da conta é obrigatório.");
@@ -119,6 +126,37 @@ public class Conta {
     public BigDecimal getSaldo() {
         synchronized (lock) {
             return saldo;
+        }
+    }
+
+    /**
+     * Reconstrói uma conta já persistida (usado pela camada de persistência). Aplica as mesmas
+     * validações do construtor: titular obrigatório, saldo com no máximo 2 casas e não negativo.
+     */
+    public static Conta restaurar(long idPersistencia, Cliente titular, BigDecimal saldo) {
+        Conta conta = new Conta(titular, saldo);
+        conta.idPersistencia = idPersistencia; // ainda não publicada: não precisa de lock
+        return conta;
+    }
+
+    /** Identificador no banco, ou {@code null} se a conta ainda não foi persistida. */
+    public Long getIdPersistencia() {
+        synchronized (lock) {
+            return idPersistencia;
+        }
+    }
+
+    /**
+     * Registra o identificador gerado pelo banco. Só pode ser chamado uma vez: depois de definido,
+     * o identificador da conta não muda. Não altera o saldo.
+     */
+    public void definirIdPersistencia(long idPersistencia) {
+        synchronized (lock) {
+            if (this.idPersistencia != null) {
+                throw new IllegalStateException(
+                        "A conta já possui identificador de persistência: " + this.idPersistencia + ".");
+            }
+            this.idPersistencia = idPersistencia;
         }
     }
 

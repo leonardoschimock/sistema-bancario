@@ -1,0 +1,36 @@
+# Maven
+target/
+dependency-reduced-pom.xml
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+release.properties
+
+# IntelliJ IDEA (inclui as conexões da aba Database)
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# Outras IDEs
+.vscode/
+.classpath
+.project
+.settings/
+nbproject/
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs e temporários
+*.log
+*.tmp
+*.swp
+hs_err_pid*
+
+# Credenciais e configurações locais (nunca versionar senhas)
+.env
+*.local.properties
