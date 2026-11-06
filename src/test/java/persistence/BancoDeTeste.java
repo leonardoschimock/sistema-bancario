@@ -5,7 +5,7 @@ package persistence;
  *
  * Variáveis de ambiente (todas opcionais):
  * <ul>
- *   <li>{@code BANCO_TESTE_URL}     (padrão {@code jdbc:mysql://localhost:3306/banco_teste});</li>
+ *   <li>{@code BANCO_TESTE_URL}     (padrão {@code jdbc:mariadb://localhost:3306/banco_teste});</li>
  *   <li>{@code BANCO_TESTE_USUARIO} (padrão {@code root});</li>
  *   <li>{@code BANCO_TESTE_SENHA}   (padrão vazia).</li>
  * </ul>
@@ -19,7 +19,7 @@ final class BancoDeTeste {
 
     static ConexaoFactory conexoes() {
         return new ConexaoFactory(
-                variavel("BANCO_TESTE_URL", "jdbc:mysql://localhost:3306/banco_teste"),
+                variavel("BANCO_TESTE_URL", "jdbc:mariadb://localhost:3306/banco_teste"),
                 variavel("BANCO_TESTE_USUARIO", "root"),
                 variavel("BANCO_TESTE_SENHA", ""));
     }

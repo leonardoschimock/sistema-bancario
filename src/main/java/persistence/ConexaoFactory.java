@@ -5,7 +5,7 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 
 /**
- * Fábrica de conexões JDBC com o MySQL.
+ * Fábrica de conexões JDBC com o MariaDB.
  *
  * Cada chamada de {@link #obterConexao()} abre uma conexão NOVA; quem a recebe é responsável por
  * fechá-la (os repositories fazem isso com try-with-resources).
@@ -22,7 +22,7 @@ import java.sql.SQLException;
  */
 public class ConexaoFactory {
 
-    public static final String URL_PADRAO = "jdbc:mysql://localhost:3306/banco";
+    public static final String URL_PADRAO = "jdbc:mariadb://localhost:3306/banco";
     public static final String USUARIO_PADRAO = "root";
 
     private final String url;

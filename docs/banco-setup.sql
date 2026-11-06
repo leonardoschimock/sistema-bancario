@@ -1,4 +1,4 @@
--- Preparação do servidor MySQL (executar uma vez, como administrador):
+-- Preparação do servidor MariaDB (executar uma vez, como administrador):
 --   mysql -u root -p < docs/banco-setup.sql
 -- Depois, criar as tabelas (src/main/resources/schema.sql) em cada banco.
 

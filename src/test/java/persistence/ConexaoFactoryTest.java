@@ -15,13 +15,13 @@ class ConexaoFactoryTest {
         assertThrows(IllegalArgumentException.class, () -> new ConexaoFactory(" ", "root", ""));
         assertThrows(IllegalArgumentException.class, () -> new ConexaoFactory(null, "root", ""));
         assertThrows(IllegalArgumentException.class,
-                () -> new ConexaoFactory("jdbc:mysql://localhost/banco", " ", ""));
+                () -> new ConexaoFactory("jdbc:mariadb://localhost/banco", " ", ""));
     }
 
     @Test
     @DisplayName("toString não revela a senha")
     void toStringNaoRevelaSenha() {
-        ConexaoFactory fabrica = new ConexaoFactory("jdbc:mysql://localhost/banco", "app", "segredo123");
+        ConexaoFactory fabrica = new ConexaoFactory("jdbc:mariadb://localhost/banco", "app", "segredo123");
 
         assertFalse(fabrica.toString().contains("segredo123"));
     }

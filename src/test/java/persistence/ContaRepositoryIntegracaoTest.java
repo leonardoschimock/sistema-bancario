@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /**
- * TESTES DE INTEGRAÇÃO: precisam de um servidor MySQL com o schema.sql aplicado no banco
+ * TESTES DE INTEGRAÇÃO: precisam de um servidor MariaDB com o schema.sql aplicado no banco
  * de teste. Não rodam no "mvn test" comum; use "mvn test -Pintegracao".
  */
 @Tag("integracao")

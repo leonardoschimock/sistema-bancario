@@ -1,4 +1,4 @@
--- Schema do Sistema Bancário (MySQL 8.0.16+).
+-- MariaDB 10.4+; também compatível com MySQL 8.0.16+
 -- Idempotente: pode ser executado mais de uma vez.
 -- Execute DENTRO do banco já criado (veja docs/banco-setup.sql):
 --   mysql -u root -p banco < src/main/resources/schema.sql

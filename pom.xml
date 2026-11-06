@@ -28,19 +28,12 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- Driver JDBC oficial do MySQL (URL jdbc:mysql://). A protobuf-java só serve ao X DevAPI,
-             que não usamos, então é excluída. -->
+        <!-- Driver JDBC do MariaDB (URL jdbc:mariadb://). Compatível com servidores MariaDB e MySQL. -->
         <dependency>
-            <groupId>com.mysql</groupId>
-            <artifactId>mysql-connector-j</artifactId>
-            <version>9.6.0</version>
+            <groupId>org.mariadb.jdbc</groupId>
+            <artifactId>mariadb-java-client</artifactId>
+            <version>3.5.9</version>
             <scope>runtime</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.google.protobuf</groupId>
-                    <artifactId>protobuf-java</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
     </dependencies>
 
