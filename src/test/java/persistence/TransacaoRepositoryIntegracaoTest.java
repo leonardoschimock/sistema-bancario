@@ -6,9 +6,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import domain.Cliente;
 import domain.Conta;
+import domain.LancamentoExtrato;
+import domain.LancamentoExtrato.Sentido;
 import domain.TipoTransacao;
 import domain.Transacao;
+import app.ExtratoExportador;
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -16,6 +23,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 /**
  * TESTES DE INTEGRAÇÃO: precisam de um servidor MariaDB com o schema.sql aplicado no banco
@@ -173,5 +181,47 @@ class TransacaoRepositoryIntegracaoTest {
         Transacao t = new Transacao(TipoTransacao.DEPOSITO, dinheiro("1.00"), agora());
 
         assertThrows(PersistenciaException.class, () -> transacoes.salvar(fantasma, t));
+    }
+
+    @Test
+    @DisplayName("Extrato informa o sentido e a conta relacionada de cada lançamento")
+    void extratoComSentidoEContaRelacionada() {
+        Conta origem = contaPersistida("Marta");
+        Conta destino = contaPersistida("Nuno");
+        LocalDateTime base = agora();
+        transacoes.salvar(origem, new Transacao(TipoTransacao.DEPOSITO, dinheiro("100.00"), base));
+        transacoes.salvar(origem, new Transacao(TipoTransacao.SAQUE, dinheiro("10.00"), base.plusSeconds(1)));
+        transacoes.salvarTransferencia(origem, destino,
+                new Transacao(TipoTransacao.TRANSFERENCIA, dinheiro("25.00"), base.plusSeconds(2)));
+
+        List<LancamentoExtrato> daOrigem = transacoes.buscarExtrato(origem);
+        List<LancamentoExtrato> doDestino = transacoes.buscarExtrato(destino);
+
+        assertEquals(3, daOrigem.size());
+        assertEquals(Sentido.ENTRADA, daOrigem.get(0).sentido());
+        assertEquals(Sentido.SAIDA, daOrigem.get(1).sentido());
+        assertEquals(Sentido.SAIDA, daOrigem.get(2).sentido());
+        assertEquals(destino.getIdPersistencia(), daOrigem.get(2).contaRelacionadaId());
+        assertEquals(1, doDestino.size());
+        assertEquals(Sentido.ENTRADA, doDestino.get(0).sentido());
+        assertEquals(origem.getIdPersistencia(), doDestino.get(0).contaRelacionadaId());
+    }
+
+    @Test
+    @DisplayName("Extrato do banco é exportado para .txt sem alterar saldo nem transações")
+    void exportaExtratoDoBanco(@TempDir Path pasta) throws IOException {
+        Conta conta = contaPersistida("Olga");
+        transacoes.salvar(conta, new Transacao(TipoTransacao.DEPOSITO, dinheiro("150.75"), agora()));
+        BigDecimal saldoAntes = conta.getSaldo();
+        int transacoesAntes = transacoes.buscarPorConta(conta).size();
+        Path arquivo = pasta.resolve("extrato.txt");
+
+        new ExtratoExportador(transacoes).exportar(conta, arquivo);
+
+        String conteudo = Files.readString(arquivo, StandardCharsets.UTF_8);
+        assertTrue(conteudo.contains("Titular       : Olga"));
+        assertTrue(conteudo.contains("+ R$ 150,75"));
+        assertEquals(saldoAntes, conta.getSaldo());
+        assertEquals(transacoesAntes, transacoes.buscarPorConta(conta).size());
     }
 }

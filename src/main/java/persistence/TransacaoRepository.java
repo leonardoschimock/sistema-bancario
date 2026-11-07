@@ -1,6 +1,8 @@
 package persistence;
 
 import domain.Conta;
+import domain.LancamentoExtrato;
+import domain.LancamentoExtrato.Sentido;
 import domain.TipoTransacao;
 import domain.Transacao;
 import java.math.BigDecimal;
@@ -41,7 +43,7 @@ public class TransacaoRepository {
             "INSERT INTO transacoes (conta_id, conta_destino_id, tipo, valor, horario) "
                     + "VALUES (?, ?, ?, ?, ?)";
     private static final String SELECT_POR_CONTA =
-            "SELECT tipo, valor, horario FROM transacoes "
+            "SELECT conta_id, conta_destino_id, tipo, valor, horario FROM transacoes "
                     + "WHERE conta_id = ? OR conta_destino_id = ? ORDER BY horario, id";
 
     private final ConexaoFactory conexoes;
@@ -91,19 +93,35 @@ public class TransacaoRepository {
     }
 
     /**
-     * Recupera o extrato da conta: depósitos e saques dela e as transferências em que ela é origem
-     * ou destino, em ordem cronológica.
+     * Recupera as transações da conta: depósitos e saques dela e as transferências em que ela é
+     * origem ou destino, em ordem cronológica. Não informa o sentido das transferências; para
+     * isso use {@link #buscarExtrato}.
      */
     public List<Transacao> buscarPorConta(Conta conta) {
+        List<Transacao> transacoes = new ArrayList<>();
+        for (LancamentoExtrato lancamento : buscarExtrato(conta)) {
+            transacoes.add(lancamento.transacao());
+        }
+        return transacoes;
+    }
+
+    /**
+     * Recupera o extrato da conta em ordem cronológica (empates pelo id da linha), já com o
+     * SENTIDO de cada lançamento em relação a esta conta e, nas transferências, a conta
+     * relacionada. Somente leitura (SELECT): não altera nenhum registro.
+     *
+     * @throws IllegalStateException se a conta ainda não foi persistida
+     */
+    public List<LancamentoExtrato> buscarExtrato(Conta conta) {
         long id = idPersistido(conta);
-        List<Transacao> extrato = new ArrayList<>();
+        List<LancamentoExtrato> extrato = new ArrayList<>();
         try (Connection conexao = conexoes.obterConexao();
              PreparedStatement ps = conexao.prepareStatement(SELECT_POR_CONTA)) {
             ps.setLong(1, id);
             ps.setLong(2, id);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    extrato.add(mapear(rs));
+                    extrato.add(mapearLancamento(rs, id));
                 }
             }
             return extrato;
@@ -133,12 +151,33 @@ public class TransacaoRepository {
         }
     }
 
-    private static Transacao mapear(ResultSet rs) throws SQLException {
+    /** Monta o lançamento do ponto de vista da conta {@code idConsultado}. */
+    private static LancamentoExtrato mapearLancamento(ResultSet rs, long idConsultado) throws SQLException {
         try {
-            return new Transacao(
+            Transacao transacao = new Transacao(
                     TipoTransacao.valueOf(rs.getString("tipo")),
                     rs.getBigDecimal("valor"),
                     rs.getObject("horario", LocalDateTime.class));
+            long contaId = rs.getLong("conta_id");
+            long destinoId = rs.getLong("conta_destino_id");
+            boolean semDestino = rs.wasNull();
+
+            switch (transacao.getTipo()) {
+                case DEPOSITO:
+                    return new LancamentoExtrato(transacao, Sentido.ENTRADA, null);
+                case SAQUE:
+                    return new LancamentoExtrato(transacao, Sentido.SAIDA, null);
+                case TRANSFERENCIA:
+                    if (semDestino) {
+                        throw new IllegalArgumentException("transferência sem conta de destino");
+                    }
+                    // conta_id é a ORIGEM; conta_destino_id é o DESTINO.
+                    return (contaId == idConsultado)
+                            ? new LancamentoExtrato(transacao, Sentido.SAIDA, destinoId)
+                            : new LancamentoExtrato(transacao, Sentido.ENTRADA, contaId);
+                default:
+                    throw new IllegalArgumentException("tipo não tratado: " + transacao.getTipo());
+            }
         } catch (IllegalArgumentException e) {
             throw new PersistenciaException("Uma linha de transação contém dados inválidos: " + e.getMessage(), e);
         }
