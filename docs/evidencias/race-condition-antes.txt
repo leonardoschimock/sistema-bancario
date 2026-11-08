@@ -1,6 +1,6 @@
 # EVIDÊNCIA DO 'ANTES' — race condition em ContaInsegura (sem sincronização)
 # Gerado em: 2026-11-04 16:22:25 +0000
-# Comando : java -Dstdout.encoding=UTF-8 -cp target/classes simulacao.didatico.DemonstracaoRaceCondition 10 50000
+# Comando : java -Dstdout.encoding=UTF-8 -cp target/classes sim.didatico.DemonstracaoRaceCondition 10 50000
 # Ambiente: openjdk version "21.0.12.1" 2026-08-18 | 1 núcleo(s) de CPU
 # Observação: a divergência NÃO é garantida em toda execução (depende do escalonamento);
 #             os números abaixo são de UMA execução real e mudam a cada rodada.

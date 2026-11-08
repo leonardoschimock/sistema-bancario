@@ -1,4 +1,4 @@
-package simulacao.didatico;
+package sim.didatico;
 
 import java.math.BigDecimal;
 
