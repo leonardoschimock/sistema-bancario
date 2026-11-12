@@ -1,0 +1,19 @@
+Feature: fluxo operação -> persistência -> extrato (BancoServico), testes e README
+
+- Adiciona app.BancoServico, ponto único de orquestração: chama Conta (regra e
+  lock) e, só se a operação foi aceita, grava a Transacao e o saldo pelos
+  repositories. Mantém uma única instância de Conta por id.
+- Adiciona ContaResumo, ParametrosSimulacao e ExecucaoSimulacao (contrato para
+  a futura interface; o serviço não imprime nem lê teclado).
+- Main: nova opção --persistir (grava as contas ao final da última rodada, só
+  se a simulação foi consistente).
+- Conta: Javadoc atualizado (sem alteração de comportamento).
+- Testes: BancoServicoTest (20 unitários, com repositories falsos) e
+  BancoServicoIntegracaoTest (3 de integração).
+- README com diagramas Mermaid, relatório antes/depois, contrato da interface
+  e checklist de entregáveis.
+- Evidências reais em docs/evidencias: mvn test (77 testes, 0 falhas),
+  mvn test -Pintegracao (23 testes, 0 falhas), race condition (10 de 10
+  rodadas divergiram) e simulação concorrente (3 de 3 consistentes).
+- Extrato de exemplo gerado pelo fluxo real, movido para docs/.
+- .gitignore: ignora cp.txt.

@@ -1,0 +1,64 @@
+﻿Comando: mvn test 
+Data: 11/11/2026 21:31:31,82 
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] -----------------< br.edu.unicesumar:sistema-bancario >-----------------
+[INFO] Building sistema-bancario 1.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] Loaded 24456 auto-discovered prefixes for remote repository central (prefixes-central.txt)
+[INFO] Loaded 64 auto-discovered prefixes for remote repository apache.snapshots (prefixes-apache.snapshots.txt)
+[INFO] 
+[INFO] --- resources:3.5.0:resources (default-resources) @ sistema-bancario ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.16.0:compile (default-compile) @ sistema-bancario ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 25 source files with javac [debug release 21] to target\classes
+[INFO] 
+[INFO] --- resources:3.5.0:testResources (default-testResources) @ sistema-bancario ---
+[INFO] skip non existing resourceDirectory <projeto>\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.16.0:testCompile (default-testCompile) @ sistema-bancario ---
+[INFO] Recompiling the module because of changed dependency.
+[INFO] Compiling 15 source files with javac [debug release 21] to target\test-classes
+[INFO] 
+[INFO] --- surefire:3.5.2:test (default-test) @ sistema-bancario ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running app.BancoServicoTest
+[INFO] Tests run: 20, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.195 s -- in app.BancoServicoTest
+[INFO] Running app.ExtratoExportadorTest
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.051 s -- in app.ExtratoExportadorTest
+[INFO] Running domain.ContaConcorrenciaTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.007 s -- in domain.ContaConcorrenciaTest
+[INFO] Running domain.ContaIdPersistenciaTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.006 s -- in domain.ContaIdPersistenciaTest
+[INFO] Running domain.ContaTest
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.009 s -- in domain.ContaTest
+[INFO] Running domain.ContaTransferenciaConcorrenteTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.098 s -- in domain.ContaTransferenciaConcorrenteTest
+[INFO] Running domain.TransacaoTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.006 s -- in domain.TransacaoTest
+[INFO] Running persistence.ConexaoFactoryTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.015 s -- in persistence.ConexaoFactoryTest
+[INFO] Running simulacao.CenarioSimulacaoTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.039 s -- in simulacao.CenarioSimulacaoTest
+[INFO] Running simulacao.OperacaoBancariaThreadTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.007 s -- in simulacao.OperacaoBancariaThreadTest
+[INFO] Running simulacao.SimulacaoConcorrenteTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.256 s -- in simulacao.SimulacaoConcorrenteTest
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 77, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  20.093 s
+[INFO] Finished at: 2026-11-11T21:32:25-03:00
+[INFO] ------------------------------------------------------------------------

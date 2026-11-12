@@ -5,6 +5,7 @@ import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.List;
 import java.util.Locale;
+import persistence.PersistenciaException;
 import simulacao.CenarioSimulacao;
 import simulacao.ResultadoSimulacao;
 import simulacao.ResultadoSimulacao.ComparacaoSaldo;
@@ -15,7 +16,7 @@ import simulacao.SimulacaoConcorrente;
  * Executa a simulação bancária concorrente e imprime os resultados.
  *
  * <pre>
- *   Main [seed] [threads] [operacoesPorThread] [contas] [rodadas]
+ *   Main [seed] [threads] [operacoesPorThread] [contas] [rodadas] [--persistir]
  *   padrão:  42      8          20000             4        3
  * </pre>
  *
@@ -23,20 +24,33 @@ import simulacao.SimulacaoConcorrente;
  * são idênticos em todas as rodadas (e em todas as execuções com os mesmos argumentos); só a
  * intercalação das threads varia. O saldo final de cada conta deve ser sempre o mesmo.
  *
- * A simulação roda inteira em memória: não acessa o banco de dados.
+ * A simulação roda inteira em memória: sem a opção {@code --persistir}, não acessa o banco.
+ *
+ * <h2>Opção --persistir</h2>
+ * Ao FINAL da última rodada (nunca durante a execução das threads) e somente se ela foi
+ * consistente, grava no banco as contas dessa rodada, com o saldo final, por meio de
+ * {@link BancoServico}. NÃO grava as operações individuais (seriam dezenas de milhares de
+ * linhas). A conexão vem de BANCO_URL, BANCO_USUARIO e BANCO_SENHA. Este adaptador não contém SQL
+ * nem regra de saldo.
  *
  * <h2>Código de saída</h2>
- * 0: todas as rodadas consistentes · 1: alguma rodada inconsistente · 2: argumentos inválidos.
+ * 0: todas as rodadas consistentes · 1: alguma rodada inconsistente · 2: argumentos inválidos ·
+ * 3: falha ao gravar no banco (com --persistir).
  */
 public final class Main {
 
     private static final Locale PT_BR = Locale.of("pt", "BR");
     private static final Duration PRAZO = Duration.ofSeconds(120);
+    private static final String OPCAO_PERSISTIR = "--persistir";
 
     private Main() {
     }
 
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] argumentos) throws InterruptedException {
+        boolean persistir = List.of(argumentos).contains(OPCAO_PERSISTIR);
+        String[] args = List.of(argumentos).stream()
+                .filter(a -> !OPCAO_PERSISTIR.equals(a))
+                .toArray(String[]::new);
         long seed;
         int threads;
         int operacoes;
@@ -53,7 +67,7 @@ public final class Main {
             }
         } catch (IllegalArgumentException e) {
             System.err.println("Argumentos inválidos: " + e.getMessage());
-            System.err.println("Uso: Main [seed] [threads] [operacoesPorThread] [contas] [rodadas]");
+            System.err.println("Uso: Main [seed] [threads] [operacoesPorThread] [contas] [rodadas] [--persistir]");
             System.exit(2);
             return;
         }
@@ -65,6 +79,7 @@ public final class Main {
                 seed, threads, operacoes, contas, rodadas);
 
         int inconsistentes = 0;
+        boolean falhaAoGravar = false;
         for (int rodada = 1; rodada <= rodadas; rodada++) {
             // Cenário novo a cada rodada (as contas são alteradas pela simulação), mesma seed = mesmo plano.
             CenarioSimulacao cenario = CenarioSimulacao.gerar(seed, threads, operacoes, contas);
@@ -80,6 +95,10 @@ public final class Main {
             } else {
                 imprimirResumo(rodada, rodadas, resultado);
             }
+            // Gravação só DEPOIS de todas as threads terminarem e só na última rodada.
+            if (persistir && rodada == rodadas) {
+                falhaAoGravar = !persistirContas(cenario, resultado);
+            }
         }
 
         System.out.println();
@@ -87,7 +106,31 @@ public final class Main {
         System.out.println(inconsistentes == 0
                 ? "VEREDITO FINAL: CONSISTENTE (todos os saldos conferem com o esperado)"
                 : "VEREDITO FINAL: INCONSISTENTE (" + inconsistentes + " rodada(s) com problemas)");
-        System.exit(inconsistentes == 0 ? 0 : 1);
+        if (falhaAoGravar) {
+            System.out.println("ATENÇÃO: a gravação no banco (--persistir) FALHOU; código de saída 3.");
+        }
+        System.exit(inconsistentes > 0 ? 1 : falhaAoGravar ? 3 : 0);
+    }
+
+    /** Grava as contas da simulação pelo serviço. Devolve {@code false} se o banco falhou. */
+    private static boolean persistirContas(CenarioSimulacao cenario, ResultadoSimulacao resultado) {
+        System.out.println();
+        if (!resultado.consistente()) {
+            System.out.println("--persistir: contas NÃO gravadas, porque a última rodada foi inconsistente.");
+            return true;
+        }
+        try {
+            List<ContaResumo> gravadas = BancoServico.doAmbiente().gravarContasSimuladas(cenario.getContas());
+            System.out.println("--persistir: contas gravadas no banco (saldo final da última rodada):");
+            for (ContaResumo c : gravadas) {
+                System.out.printf("  conta #%d | %-12s | saldo %20s%n", c.id(), c.titular(), brl(c.saldo()));
+            }
+            System.out.println("Para exportar um extrato: ExportarExtrato <idDaConta> [arquivo.txt]");
+            return true;
+        } catch (PersistenciaException e) {
+            System.err.println("--persistir: falha ao gravar no banco: " + e.getMessage());
+            return false;
+        }
     }
 
     private static void imprimirPlano(CenarioSimulacao cenario) {

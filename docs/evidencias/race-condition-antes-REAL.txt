@@ -1,0 +1,28 @@
+java 25.0.2 2026-01-20 LTS
+
+echo %NUMBER_OF_PROCESSORS%: 16
+
+# Comando: DemonstracaoRaceCondition 10 50000
+# Data: 12/11/2026 15:29:15,04 
+=== Demonstração de race condition (ContaInsegura) ===
+Java                : 25.0.2
+Núcleos disponíveis : 16
+Threads de depósito : 4 x 50000 x R$ 10.00
+Threads de saque    : 4 x 50000 x R$ 5.00
+Saldo inicial       : R$ 1000000.00
+Saldo ESPERADO      : R$ 2000000.00
+
+Controle sequencial (1 thread): esperado=R$ 2000000.00 | observado=R$ 2000000.00 | OK
+
+Rodada 1: esperado=R$ 2000000.00 | observado=R$ 1205840.00 | diferença=R$ -794160.00 | DIVERGIU
+Rodada 2: esperado=R$ 2000000.00 | observado=R$ 1485535.00 | diferença=R$ -514465.00 | DIVERGIU
+Rodada 3: esperado=R$ 2000000.00 | observado=R$ 1292280.00 | diferença=R$ -707720.00 | DIVERGIU
+Rodada 4: esperado=R$ 2000000.00 | observado=R$ 1286180.00 | diferença=R$ -713820.00 | DIVERGIU
+Rodada 5: esperado=R$ 2000000.00 | observado=R$ 1422530.00 | diferença=R$ -577470.00 | DIVERGIU
+Rodada 6: esperado=R$ 2000000.00 | observado=R$ 785105.00 | diferença=R$ -1214895.00 | DIVERGIU
+Rodada 7: esperado=R$ 2000000.00 | observado=R$ 814205.00 | diferença=R$ -1185795.00 | DIVERGIU
+Rodada 8: esperado=R$ 2000000.00 | observado=R$ 841745.00 | diferença=R$ -1158255.00 | DIVERGIU
+Rodada 9: esperado=R$ 2000000.00 | observado=R$ 847735.00 | diferença=R$ -1152265.00 | DIVERGIU
+Rodada 10: esperado=R$ 2000000.00 | observado=R$ 1045575.00 | diferença=R$ -954425.00 | DIVERGIU
+
+Rodadas com divergência: 10 de 10

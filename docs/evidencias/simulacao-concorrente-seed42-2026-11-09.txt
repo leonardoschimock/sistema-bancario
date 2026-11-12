@@ -1,0 +1,44 @@
+# EVIDÊNCIA DO 'DEPOIS' — simulação concorrente com Conta sincronizada
+# Gerado em: 2026-11-09 22:03:40 +0000
+# Comando : java -Dstdout.encoding=UTF-8 -cp <classes compiladas de src/main/java> app.Main 42 8 20000 4 3
+# Ambiente: openjdk version "21.0.12.1" 2026-08-18 | 1 núcleo(s) de CPU
+# Observação: execução em memória (sem --persistir); não acessa banco.
+#
+=== Simulação bancária concorrente ===
+Java                 : 21.0.12.1
+Núcleos disponíveis  : 1
+Parâmetros           : seed=42 | threads=8 | operações/thread=20000 | contas=4 | rodadas=3
+
+--- Plano (idêntico em todas as rodadas) ---
+Operações planejadas : 160000 (64106 DEPOSITO, 47931 SAQUE, 47963 TRANSFERENCIA)
+Saldos ESPERADOS (calculados antes de iniciar qualquer thread):
+  Titular 1    inicial      R$ 1.210.803,96 | esperado      R$ 1.419.233,44
+  Titular 2    inicial      R$ 1.225.054,12 | esperado      R$ 1.408.560,81
+  Titular 3    inicial      R$ 1.200.982,60 | esperado      R$ 1.431.835,16
+  Titular 4    inicial      R$ 1.211.897,97 | esperado      R$ 1.421.208,96
+
+--- Rodada 1/3 ---
+Threads (operações aceitas / recusadas / planejadas):
+  operador-1  aceitas=20000   recusadas=0     planejadas=20000  
+  operador-2  aceitas=20000   recusadas=0     planejadas=20000  
+  operador-3  aceitas=20000   recusadas=0     planejadas=20000  
+  operador-4  aceitas=20000   recusadas=0     planejadas=20000  
+  operador-5  aceitas=20000   recusadas=0     planejadas=20000  
+  operador-6  aceitas=20000   recusadas=0     planejadas=20000  
+  operador-7  aceitas=20000   recusadas=0     planejadas=20000  
+  operador-8  aceitas=20000   recusadas=0     planejadas=20000  
+Saldos (esperado x obtido):
+  Titular 1    esperado      R$ 1.419.233,44 | obtido      R$ 1.419.233,44 | diferença      R$ 0,00 | OK
+  Titular 2    esperado      R$ 1.408.560,81 | obtido      R$ 1.408.560,81 | diferença      R$ 0,00 | OK
+  Titular 3    esperado      R$ 1.431.835,16 | obtido      R$ 1.431.835,16 | diferença      R$ 0,00 | OK
+  Titular 4    esperado      R$ 1.421.208,96 | obtido      R$ 1.421.208,96 | diferença      R$ 0,00 | OK
+  TOTAL        esperado      R$ 5.680.838,37 | obtido      R$ 5.680.838,37
+Operações: planejadas=160000 | aceitas=160000 | recusadas=0 | threads com falha=0
+Tempo: 0.04s
+Resultado: CONSISTENTE
+--- Rodada 2/3 --- aceitas=160000/160000 | recusadas=0 | contas OK=4/4 | 0.02s | CONSISTENTE
+--- Rodada 3/3 --- aceitas=160000/160000 | recusadas=0 | contas OK=4/4 | 0.02s | CONSISTENTE
+
+Rodadas consistentes: 3 de 3
+VEREDITO FINAL: CONSISTENTE (todos os saldos conferem com o esperado)
+# código de saída: 0

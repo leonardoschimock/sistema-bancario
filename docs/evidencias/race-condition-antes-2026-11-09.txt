@@ -1,0 +1,30 @@
+# EVIDÊNCIA DO 'ANTES' — race condition em ContaInsegura (sem sincronização)
+# Gerado em: 2026-11-09 22:03:40 +0000
+# Comando : java -Dstdout.encoding=UTF-8 -cp <classes compiladas de src/main/java> sim.didatico.DemonstracaoRaceCondition 10 50000
+# Compilação: java --module jdk.compiler/com.sun.tools.javac.Main -source 21 -target 21 (JRE sem javac/Maven; ver README)
+# Ambiente: openjdk version "21.0.12.1" 2026-08-18 | 1 núcleo(s) de CPU
+# Observação: a divergência NÃO é garantida em toda execução (depende do escalonamento);
+#             os números abaixo são de UMA execução real e mudam a cada rodada.
+#
+=== Demonstração de race condition (ContaInsegura) ===
+Java                : 21.0.12.1
+Núcleos disponíveis : 1
+Threads de depósito : 4 x 50000 x R$ 10.00
+Threads de saque    : 4 x 50000 x R$ 5.00
+Saldo inicial       : R$ 1000000.00
+Saldo ESPERADO      : R$ 2000000.00
+
+Controle sequencial (1 thread): esperado=R$ 2000000.00 | observado=R$ 2000000.00 | OK
+
+Rodada 1: esperado=R$ 2000000.00 | observado=R$ 2000000.00 | diferença=R$ 0.00 | igual (nesta execução)
+Rodada 2: esperado=R$ 2000000.00 | observado=R$ 2000000.00 | diferença=R$ 0.00 | igual (nesta execução)
+Rodada 3: esperado=R$ 2000000.00 | observado=R$ 1413270.00 | diferença=R$ -586730.00 | DIVERGIU
+Rodada 4: esperado=R$ 2000000.00 | observado=R$ 1004150.00 | diferença=R$ -995850.00 | DIVERGIU
+Rodada 5: esperado=R$ 2000000.00 | observado=R$ 1603305.00 | diferença=R$ -396695.00 | DIVERGIU
+Rodada 6: esperado=R$ 2000000.00 | observado=R$ 1323570.00 | diferença=R$ -676430.00 | DIVERGIU
+Rodada 7: esperado=R$ 2000000.00 | observado=R$ 2000000.00 | diferença=R$ 0.00 | igual (nesta execução)
+Rodada 8: esperado=R$ 2000000.00 | observado=R$ 2250000.00 | diferença=R$ 250000.00 | DIVERGIU
+Rodada 9: esperado=R$ 2000000.00 | observado=R$ 2000000.00 | diferença=R$ 0.00 | igual (nesta execução)
+Rodada 10: esperado=R$ 2000000.00 | observado=R$ 2000000.00 | diferença=R$ 0.00 | igual (nesta execução)
+
+Rodadas com divergência: 5 de 10

@@ -6,7 +6,7 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * Conta bancária: núcleo das regras de negócio e único lugar onde o saldo é alterado.
  *
- * <h2>Concorrência (etapa atual: Semana 4)</h2>
+ * <h2>Concorrência (versão atual: saldo sincronizado e transferência com ordem global de bloqueio)</h2>
  *
  * <b>Estado compartilhado.</b> O único estado mutável é o {@code saldo}. O titular é final
  * (imutável) e BigDecimal é imutável, então quem recebe o valor de {@link #getSaldo()} não
