@@ -2,10 +2,14 @@ package app.ui.telas;
 
 import app.ui.ControladorBanco;
 import app.ui.EstadoApp;
+import app.ui.SincronizadorContas;
 import app.ui.telas.PainelCelular.Aba;
 import app.ui.tema.Tema.Cor;
 import app.ui.tema.Tema.Medida;
 import java.awt.Dimension;
+import java.awt.GraphicsConfiguration;
+import java.awt.Insets;
+import java.awt.Toolkit;
 import java.util.Map;
 import java.util.function.Consumer;
 import javax.swing.JComponent;
@@ -13,25 +17,27 @@ import javax.swing.JFrame;
 import javax.swing.WindowConstants;
 
 /**
- * Janela do app: 430 x 860 (mínimo 360 x 640), redimensionável. Monta as telas, liga o estado
+ * Janela do app: tamanho fixo 402 x 874 pt (iPhone 17 Pro), sem redimensionar. Monta as telas, liga o estado
  * compartilhado e dispara a leitura inicial das contas. Não contém regra bancária.
  */
 public final class JanelaPrincipal extends JFrame {
     private static final long serialVersionUID = 1L;
 
-    private final transient ControladorBanco controlador;
-    private final transient EstadoApp estado;
     private final PainelCelular celular;
+    private final transient SincronizadorContas sincronizador;
 
     public JanelaPrincipal(ControladorBanco controlador, EstadoApp estado) {
-        super("Sistema Banc\u00e1rio");
-        this.controlador = controlador;
-        this.estado = estado;
+        super("Solid Bank");
+        java.awt.Image icone = app.ui.tema.Componentes.iconeDoAplicativo();
+        if (icone != null) {
+            setIconImage(icone);
+        }
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 
         Map<Aba, JComponent> telas = PainelCelular.mapa();
         Consumer<Aba> navegar = aba -> celular().mostrar(aba);
-        Runnable recarregar = this::carregarContas;
+        sincronizador = new SincronizadorContas(controlador, estado);
+        Runnable recarregar = sincronizador::carregarContas;
         PainelOperacoes operacoes = new PainelOperacoes(controlador, estado, navegar);
         telas.put(Aba.INICIO, new PainelVisaoGeral(controlador, estado, recarregar, navegar, tipo -> {
             operacoes.selecionarTipo(tipo);
@@ -44,25 +50,33 @@ public final class JanelaPrincipal extends JFrame {
         celular = new PainelCelular(telas);
         getContentPane().setBackground(Cor.FUNDO);
         setContentPane(celular);
-        setMinimumSize(new Dimension(Medida.JANELA_LARGURA_MIN, Medida.JANELA_ALTURA_MIN));
-        setSize(Medida.JANELA_LARGURA, Medida.JANELA_ALTURA);
+        setResizable(false);
+        aplicarTamanhoFixo();
         setLocationRelativeTo(null);
-        carregarContas();
+        sincronizador.carregarContas();
+    }
+
+    /**
+     * Área útil fixa de 402 x 874 pt (iPhone 17 Pro). Só se a tela não comportar essa altura a janela
+     * encolhe, mantendo a mesma proporção (nunca abaixo de {@code JANELA_LARGURA_MIN}).
+     */
+    private void aplicarTamanhoFixo() {
+        getContentPane().setPreferredSize(new Dimension(Medida.JANELA_LARGURA, Medida.JANELA_ALTURA));
+        pack();
+        GraphicsConfiguration tela = getGraphicsConfiguration();
+        Insets reservado = Toolkit.getDefaultToolkit().getScreenInsets(tela);
+        int disponivel = tela.getBounds().height - reservado.top - reservado.bottom;
+        if (getHeight() > disponivel) {
+            Insets moldura = getInsets();
+            double fator = (disponivel - moldura.top - moldura.bottom) / (double) Medida.JANELA_ALTURA;
+            int largura = Math.max(Medida.JANELA_LARGURA_MIN, (int) Math.round(Medida.JANELA_LARGURA * fator));
+            int altura = (int) Math.round(largura * (double) Medida.JANELA_ALTURA / Medida.JANELA_LARGURA);
+            getContentPane().setPreferredSize(new Dimension(largura, altura));
+            pack();
+        }
     }
 
     private PainelCelular celular() {
         return celular;
-    }
-
-    /** Lê as contas do banco (SwingWorker) e entrega o resultado, real, ao estado compartilhado. */
-    private void carregarContas() {
-        estado.iniciarCargaContas();
-        controlador.listarContas(resultado -> {
-            if (resultado.ok()) {
-                estado.definirContas(resultado.valor());
-            } else {
-                estado.definirFalhaContas(resultado.falha());
-            }
-        });
     }
 }

@@ -16,7 +16,7 @@ import app.ui.tema.Componentes.Estilo;
 import app.ui.tema.Componentes.Folha;
 import app.ui.tema.Componentes.Pilha;
 import app.ui.tema.Componentes.Segmentos;
-import app.ui.tema.Componentes.SeletorConta;
+import app.ui.tema.Componentes.BotaoIcone;
 import app.ui.tema.Componentes.TextoQuebrado;
 import app.ui.tema.Icones;
 import app.ui.tema.Icones.Icone;
@@ -36,8 +36,8 @@ import javax.swing.JPanel;
  * Tela Operações.
  * <ul>
  *   <li><b>Propósito:</b> depositar, sacar e transferir; o resultado só aparece depois que o serviço confirma.</li>
- *   <li><b>Áreas:</b> barra superior · segmentos (Depósito, Saque, Transferência) · valor grande · seletor(es) de conta (origem padrão = conta selecionada) · botão primário fixo no fim.</li>
- *   <li><b>Componentes:</b> barraSuperior, segmentos, campoValor (máscara pt-BR), seletorConta, botao, folha de resultado.</li>
+ *   <li><b>Áreas:</b> barra superior · segmentos (Depósito, Saque, Transferência) · valor grande · \"Pagando com\"/\"Depositando em\"/\"Sacando de\" com o cartão da conta e o saldo atual (olho oculta) · \"Transferir para\" · botão primário fixo no fim.</li>
+ *   <li><b>Componentes:</b> barraSuperior, segmentos, campoValor (máscara pt-BR), cartaoContaAtual, botaoIcone (olho), botao, folha de resultado.</li>
  *   <li><b>Dados e thread:</b> {@code depositar/sacar/transferir} do controlador em SwingWorker; controles desabilitados durante a chamada e reabilitados ao retorno; depois saldo, lista e extrato são recarregados pelo estado.</li>
  *   <li><b>Estados:</b> aguardando · em execução (sem envio duplicado) · concluída · recusada (saldo insuficiente, conta inexistente, origem = destino) · falha técnica.</li>
  *   <li><b>Erros:</b> valor inválido destaca o campo; conta não escolhida avisa abaixo dos seletores; falha de persistência diz para conferir o extrato antes de repetir.</li>
@@ -53,10 +53,11 @@ public final class PainelOperacoes extends JPanel {
     private final Segmentos segmentos = Componentes.segmentos(
             TipoOperacao.DEPOSITO.segmento(), TipoOperacao.SAQUE.segmento(), TipoOperacao.TRANSFERENCIA.segmento());
     private final CampoValor valor = Componentes.campoValor("Valor");
-    private final JLabel rotuloConta = Componentes.rotulo("", Fonte.ROTULO, Cor.TEXTO_SECUNDARIO);
-    private final JLabel rotuloDestino = Componentes.rotulo("Conta de destino", Fonte.ROTULO, Cor.TEXTO_SECUNDARIO);
-    private final SeletorConta seletorConta;
-    private final SeletorConta seletorDestino;
+    private final JLabel rotuloConta = Componentes.rotulo("", Fonte.SUBTITULO, Cor.TEXTO_SECUNDARIO);
+    private final JLabel rotuloDestino = Componentes.rotulo("Transferir para", Fonte.SUBTITULO, Cor.TEXTO_SECUNDARIO);
+    private final BotaoIcone olho = Componentes.botaoIcone(Icone.OLHO, "Ocultar saldo", false);
+    private final Pilha zonaConta = Componentes.pilha();
+    private final Pilha zonaDestino = Componentes.pilha();
     private final TextoQuebrado erroConta = Componentes.textoQuebrado(" ", Fonte.ROTULO, Cor.PERIGO);
     private final Botao acao = Componentes.botao("", null, Estilo.PRIMARIO);
     private final java.awt.Component folgaDestino = Componentes.espaco(Medida.ESP_3);
@@ -73,8 +74,7 @@ public final class PainelOperacoes extends JPanel {
         this.navegar = navegar;
         setOpaque(false);
 
-        seletorConta = Componentes.seletorConta(estado::contas, estado::saldoOculto, this::escolherPrincipal);
-        seletorDestino = Componentes.seletorConta(estado::contas, estado::saldoOculto, this::escolherDestino);
+        olho.addActionListener(e -> estado.alternarSaldoOculto());
         erroConta.setVisible(false);
         erroConta.setAlignmentX(LEFT_ALIGNMENT);
 
@@ -83,11 +83,15 @@ public final class PainelOperacoes extends JPanel {
         Pilha campos = Componentes.pilha();
         campos.adicionar(segmentos).espaco(Medida.ESP_6);
         campos.adicionar(valor).espaco(Medida.ESP_6);
-        campos.adicionar(rotuloConta).espaco(Medida.ESP_1);
-        campos.adicionar(seletorConta);
+        JPanel linhaConta = new JPanel(new BorderLayout());
+        linhaConta.setOpaque(false);
+        linhaConta.add(rotuloConta, BorderLayout.WEST);
+        linhaConta.add(olho, BorderLayout.EAST);
+        campos.adicionar(linhaConta).espaco(Medida.ESP_1);
+        campos.adicionar(zonaConta);
         campos.add(folgaDestino);
-        campos.adicionar(rotuloDestino).espaco(Medida.ESP_1);
-        campos.adicionar(seletorDestino).espaco(Medida.ESP_3);
+        campos.adicionar(rotuloDestino).espaco(Medida.ESP_2);
+        campos.adicionar(zonaDestino).espaco(Medida.ESP_3);
         campos.adicionar(erroConta);
         Pilha conteudo = Componentes.pilha();
         conteudo.adicionar(Componentes.comMargemDeTela(campos)).espaco(Medida.ESP_6);
@@ -108,20 +112,51 @@ public final class PainelOperacoes extends JPanel {
         valor.aoConfirmar(this::executar);
         estado.adicionarOuvinte(this::aoMudar);
         conta = estado.contaSelecionada();
-        seletorConta.setConta(conta);
         aplicarTipo();
     }
 
     private void escolherPrincipal(ContaResumo escolhida) {
         conta = escolhida;
-        seletorConta.setConta(escolhida);
         erroConta.setVisible(false);
+        redesenharContas();
     }
 
     private void escolherDestino(ContaResumo escolhida) {
         destino = escolhida;
-        seletorDestino.setConta(escolhida);
         erroConta.setVisible(false);
+        redesenharContas();
+    }
+
+    /** Reconstrói os cartões de conta com os dados atuais (saldo "Atual" vem do estado). */
+    private void redesenharContas() {
+        boolean oculto = estado.saldoOculto();
+        olho.setIcone(oculto ? Icone.OLHO_FECHADO : Icone.OLHO, oculto ? "Mostrar saldo" : "Ocultar saldo");
+        zonaConta.removeAll();
+        zonaConta.adicionar(Componentes.cartaoContaAtual(conta, true, oculto).aoClicar(() -> {
+            if (!ocupado) {
+                Componentes.escolherConta(this, conta, estado::contas, estado::saldoOculto, this::escolherPrincipal);
+            }
+        }));
+        zonaDestino.removeAll();
+        zonaDestino.adicionar(Componentes.cartaoContaAtual(destino, false, oculto).aoClicar(() -> {
+            if (!ocupado) {
+                Componentes.escolherConta(this, destino, estado::contas, estado::saldoOculto, this::escolherDestino);
+            }
+        }));
+        revalidate();
+        repaint();
+    }
+
+    private ContaResumo atualizada(ContaResumo c) {
+        if (c == null) {
+            return null;
+        }
+        for (ContaResumo candidata : estado.contas()) {
+            if (candidata.id() == c.id()) {
+                return candidata;
+            }
+        }
+        return c;
     }
 
     /** Usado pelas ações rápidas do Início: pré-seleciona o tipo da operação. */
@@ -133,10 +168,15 @@ public final class PainelOperacoes extends JPanel {
 
     private void aplicarTipo() {
         boolean transferencia = tipo == TipoOperacao.TRANSFERENCIA;
-        rotuloConta.setText(tipo == TipoOperacao.DEPOSITO ? "Conta de destino" : "Conta de origem");
+        rotuloConta.setText(switch (tipo) {
+            case DEPOSITO -> "Depositando em";
+            case SAQUE -> "Sacando de";
+            case TRANSFERENCIA -> "Pagando com";
+        });
         rotuloDestino.setVisible(transferencia);
-        seletorDestino.setVisible(transferencia);
+        zonaDestino.setVisible(transferencia);
         folgaDestino.setVisible(transferencia);
+        redesenharContas();
         acao.setText(tipo.botao());
         valor.limparErro();
         erroConta.setVisible(false);
@@ -145,10 +185,21 @@ public final class PainelOperacoes extends JPanel {
     }
 
     private void aoMudar(Mudanca mudanca) {
-        if (mudanca == Mudanca.SELECAO && !ocupado) {
-            conta = estado.contaSelecionada();
-            seletorConta.setConta(conta);
-            erroConta.setVisible(false);
+        switch (mudanca) {
+            case SELECAO -> {
+                if (!ocupado) {
+                    conta = estado.contaSelecionada();
+                    erroConta.setVisible(false);
+                }
+                redesenharContas();
+            }
+            case CONTAS -> {
+                conta = atualizada(conta);
+                destino = atualizada(destino);
+                redesenharContas();
+            }
+            case SALDO_OCULTO -> redesenharContas();
+            case OPERACAO -> { }
         }
     }
 
@@ -198,8 +249,7 @@ public final class PainelOperacoes extends JPanel {
         acao.setEnabled(livre);
         segmentos.setEnabled(livre);
         valor.setEnabled(livre);
-        seletorConta.setEnabled(livre);
-        seletorDestino.setEnabled(livre);
+        olho.setEnabled(livre);
     }
 
     private void concluir(TipoOperacao pedido, BigDecimal quantia, ContaResumo principal, ContaResumo outra,

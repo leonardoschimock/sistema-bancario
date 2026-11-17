@@ -33,5 +33,6 @@ hs_err_pid*
 
 # Credenciais e configurações locais (nunca versionar senhas)
 .env
-*.local.propertiescp.txt
+*.local.properties
+cp.txt
 msg.txt

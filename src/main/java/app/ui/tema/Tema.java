@@ -122,11 +122,13 @@ public final class Tema {
         public static final int ALTURA_BARRA_SUPERIOR = 56;
         public static final int ALTURA_ABAS = 64;
         public static final int ACAO_CIRCULO = 56;
-        public static final int LARGURA_APP = 420;
+        public static final int LARGURA_APP = 402;
 
         public static final int ICONE_PEQ = 16;
         public static final int ICONE = 24;
         public static final int ICONE_GRANDE = 32;
+        public static final int ICONE_ACAO = 28;
+        public static final int LOGO_HERO = 56;
 
         // ---- derivadas dos componentes (todas na grade de 4 px, salvo traços) ----
         public static final int BORDA = 1;
@@ -159,10 +161,11 @@ public final class Tema {
         public static final int ATRASO_ANIMACAO_MS = 16;
 
         // ---- janela (SKILL §3) ----
-        public static final int JANELA_LARGURA = 430;
-        public static final int JANELA_ALTURA = 860;
-        public static final int JANELA_LARGURA_MIN = 360;
-        public static final int JANELA_ALTURA_MIN = 640;
+        /** iPhone 17 Pro: 402 x 874 pt (6,3", 1206 x 2622 px a @3x). */
+        public static final int JANELA_LARGURA = 402;
+        public static final int JANELA_ALTURA = 874;
+        /** Menor largura quando a tela é baixa demais e a janela precisa encolher mantendo a proporção. */
+        public static final int JANELA_LARGURA_MIN = 300;
         public static final float FOLHA_FRACAO_MAXIMA = 0.85f;
 
         private Medida() {

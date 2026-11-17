@@ -162,19 +162,12 @@ public final class Icones {
                 linha(g, 15.2, 8.8, 8.8, 15.2);
             }
             case CONCORRENCIA -> {
-                Path2D cima = new Path2D.Double();
-                cima.moveTo(5, 12);
-                cima.curveTo(11, 12, 11, 5, 19, 5);
-                g.draw(cima);
-                Path2D baixo = new Path2D.Double();
-                baixo.moveTo(5, 12);
-                baixo.curveTo(11, 12, 11, 19, 19, 19);
-                g.draw(baixo);
-                linha(g, 5, 12, 19, 12);
-                ponto(g, 4, 12);
-                ponto(g, 20, 5);
-                ponto(g, 20, 12);
-                ponto(g, 20, 19);
+                // três "threads" em paralelo, cada uma com sua seta, de comprimentos diferentes
+                double[][] linhas = {{6, 20}, {12, 15}, {18, 18}};
+                for (double[] l : linhas) {
+                    linha(g, 4, l[0], l[1], l[0]);
+                    poli(g, false, l[1] - 3, l[0] - 3, l[1], l[0], l[1] - 3, l[0] + 3);
+                }
             }
             case BANCO_DADOS -> {
                 g.draw(new Ellipse2D.Double(5, 3.5, 14, 6));

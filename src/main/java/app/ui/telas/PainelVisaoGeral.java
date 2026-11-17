@@ -16,7 +16,6 @@ import app.ui.tema.Componentes.Estilo;
 import app.ui.tema.Componentes.Hero;
 import app.ui.tema.Componentes.Pilha;
 import app.ui.tema.Componentes.SeletorConta;
-import app.ui.tema.Icones;
 import app.ui.tema.Icones.Icone;
 import app.ui.tema.Tema.Cor;
 import app.ui.tema.Tema.Fonte;
@@ -99,9 +98,11 @@ public final class PainelVisaoGeral extends JPanel {
         Hero hero = Componentes.hero();
         Pilha p = Componentes.pilha();
 
-        JLabel marca = Componentes.rotulo("Sistema Banc\u00e1rio", Fonte.SUBTITULO, Cor.SOBRE_PRIMARIA);
-        marca.setIcon(Icones.de(Icone.BANCO, Medida.ICONE, Cor.SOBRE_PRIMARIA));
-        marca.setIconTextGap(Medida.ESP_2);
+        JLabel nome = Componentes.rotulo("Solid Bank", Fonte.SECAO, Cor.SOBRE_PRIMARIA);
+        JPanel marca = new JPanel(new BorderLayout(Medida.ESP_2, 0));
+        marca.setOpaque(false);
+        marca.add(Componentes.logo(Medida.LOGO_HERO), BorderLayout.WEST);
+        marca.add(nome, BorderLayout.CENTER);
         JPanel direita = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
         direita.setOpaque(false);
         direita.add(chipBanco);

@@ -1,13 +1,14 @@
 # Sistema Bancário com Transações Concorrentes
 
-Biblioteca e simulador em Java que modelam contas bancárias (depósito, saque e transferência) operadas por
-várias threads ao mesmo tempo. O saldo é protegido por sincronização, as operações aceitas são persistidas em
-MariaDB via JDBC puro e o extrato de cada conta pode ser consultado e exportado para `.txt`.
+Biblioteca, simulador e aplicativo desktop (Swing, marca **Solid Bank**) em Java que modelam contas bancárias
+(depósito, saque e transferência) operadas por várias threads ao mesmo tempo. O saldo é protegido por
+sincronização, as operações aceitas são persistidas em MariaDB via JDBC puro e o extrato de cada conta pode ser
+consultado e exportado para `.txt`.
 
 O projeto tem dois objetivos técnicos:
 
 1. **Corretude sob concorrência:** o saldo final deve ser exatamente o esperado, sem perda de atualização e sem deadlock em transferências cruzadas.
-2. **Separação de responsabilidades:** regra de negócio, persistência, simulação e orquestração ficam em camadas distintas, com um único ponto de entrada (`BancoServico`) para qualquer interface futura.
+2. **Separação de responsabilidades:** regra de negócio, persistência, simulação e orquestração ficam em camadas distintas, com um único ponto de entrada (`BancoServico`) usado pelas duas interfaces: console (`app.Main`) e gráfica (`app.ui.AppGui`).
 
 ## Sumário
 
@@ -17,6 +18,7 @@ O projeto tem dois objetivos técnicos:
 - [Arquitetura](#arquitetura)
 - [Primeiros passos](#primeiros-passos)
 - [Uso](#uso)
+- [Interface gráfica](#interface-gráfica)
 - [Testes](#testes)
 - [Concorrência](#concorrência)
 - [Persistência](#persistência)
@@ -36,6 +38,7 @@ O projeto tem dois objetivos técnicos:
 - Cada operação aceita gera uma `Transacao` imutável (tipo, valor, horário) gravada no banco; operações recusadas não gravam nada.
 - Extrato por conta, com sentido (entrada/saída) e conta relacionada, consultável e exportável em `.txt` (UTF-8).
 - Simulador concorrente determinístico (por *seed*) que compara o saldo esperado, calculado por aritmética pura, com o saldo obtido.
+- Interface gráfica (Swing) com cinco telas: Início, Contas, Operações, Extrato e Simulação; todo acesso ao banco roda fora da thread de eventos.
 - Demonstração isolada da *race condition* (`ContaInsegura`, sem sincronização) para contraste com `Conta`.
 
 ## Stack
@@ -46,6 +49,7 @@ O projeto tem dois objetivos técnicos:
 | Build | Maven |
 | Banco de dados | MariaDB 10.4+ (compatível com MySQL 8.0.16+) |
 | Driver JDBC | `mariadb-java-client` 3.5.9 |
+| Interface gráfica | Swing (módulo `java.desktop` do JDK, sem dependências extras) |
 | Testes | JUnit 5.11.4 |
 
 ## Estrutura do projeto
@@ -61,8 +65,14 @@ src/main/java
 ├── app/           BancoServico (fachada), ExtratoExportador, adaptadores de console
 │                  (Main, ExportarExtrato) e DTOs (ContaResumo, ParametrosSimulacao,
 │                  ExecucaoSimulacao)
+├── app/ui/        Interface gráfica: AppGui (entrada), ControladorBanco (SwingWorker),
+│                  EstadoApp, SincronizadorContas, Moeda
+│   ├── telas/     JanelaPrincipal, PainelCelular e os painéis Início, Contas, Operações,
+│   │              Extrato e Simulação
+│   └── tema/      Tema (cores, fontes, medidas), Componentes e Icones (desenhados em Java2D)
 └── sim/didatico/  ContaInsegura e DemonstracaoRaceCondition (isolados, ver abaixo)
 src/main/resources/schema.sql    Esquema das tabelas
+src/main/resources/app/ui/       Brasão e ícone do Solid Bank (PNG)
 docs/banco-setup.sql             Criação dos bancos "banco" e "banco_teste"
 docs/evidencias/                 Saídas registradas de execuções
 ```
@@ -80,10 +90,16 @@ Invariantes que o código mantém:
 - Não há SQL fora de `persistence`.
 - `Transacao` é imutável.
 - `BancoServico` não usa `synchronized`, `System.out`, `System.exit` nem lê teclado: devolve valores e lança exceções.
+- A interface gráfica só fala com `BancoServico`, por meio de `ControladorBanco`; nenhuma tela recebe uma `Conta` (só `ContaResumo`) nem executa chamada ao serviço na thread de eventos.
 
 ```mermaid
 flowchart TB
-    UI["Interface (futura)"]
+    subgraph GUI["Interface gráfica (app.ui)"]
+        TELAS["telas: Início, Contas, Operações, Extrato, Simulação"]
+        ESTADO["EstadoApp"]
+        SINC["SincronizadorContas"]
+        CTRL["ControladorBanco (SwingWorker)"]
+    end
     subgraph ADAPT["Adaptadores de console (app)"]
         MAIN["Main"]
         EXPCLI["ExportarExtrato"]
@@ -105,7 +121,11 @@ flowchart TB
     end
     DB[("MariaDB: contas e transacoes")]
 
-    UI --> SERV
+    TELAS --> ESTADO
+    TELAS --> CTRL
+    SINC --> ESTADO
+    SINC --> CTRL
+    CTRL --> SERV
     MAIN -->|"--persistir"| SERV
     MAIN --> CEN
     EXPCLI --> REPC
@@ -266,10 +286,56 @@ Total saídas  : R$ 130,00
 
 ---
 
+## Interface gráfica
+
+Aplicativo desktop em Swing com a marca **Solid Bank**, em formato de celular: janela fixa de 402 × 874 pt
+(proporção do iPhone 17 Pro, sem redimensionar). Se a tela não comportar essa altura, a janela encolhe mantendo
+a proporção (largura mínima de 300 px). Não exige dependência além do JDK e usa o mesmo `BancoServico` do console.
+
+```bash
+java -cp "$CP" app.ui.AppGui      # exige o MariaDB em execução e as credenciais da seção "Credenciais"
+```
+
+Se o banco estiver indisponível, o aplicativo abre, o chip do Início mostra "Banco indisponível" e as telas
+oferecem "Tentar de novo". O chip só diz "Banco conectado" depois de uma leitura real das contas.
+
+### Telas
+
+Navegação por barra inferior com cinco abas:
+
+| Tela | O que faz |
+|---|---|
+| Início | Saldo da conta selecionada (com botão de olho para ocultar), seletor de conta, ações rápidas e as últimas 5 movimentações |
+| Contas | Lista as contas, define a conta ativa e cria contas novas (nome do titular e saldo inicial) |
+| Operações | Depósito, saque e transferência, com campo de valor em pt-BR; a conta aparece num cartão ("Depositando em", "Sacando de", "Pagando com") com o saldo atual; transferência pede também "Transferir para" |
+| Extrato | Movimentações da conta agrupadas por data, filtro Todos/Entradas/Saídas e exportação para `.txt` (pede confirmação antes de substituir um arquivo existente) |
+| Simulação | Roda a simulação concorrente (threads, operações por thread, contas, seed, prazo e gravação opcional no banco), com botão Encerrar e resultado esperado × obtido por conta |
+
+### Como a interface se liga ao restante
+
+```mermaid
+flowchart LR
+    T["telas (EDT)"] -->|"pedem"| C["ControladorBanco"]
+    C -->|"SwingWorker, fora da EDT"| S["BancoServico"]
+    S -->|"Resultado ou Falha"| C
+    C -->|"na EDT"| T
+    T -->|"atualizam"| E["EstadoApp"]
+    E -->|"OPERACAO"| SC["SincronizadorContas"]
+    SC -->|"consultarSaldo das contas afetadas"| C
+```
+
+- `ControladorBanco` executa cada chamada em um `SwingWorker` e devolve um `Resultado` (valor ou `Falha`) na thread de eventos. Nenhuma exceção chega às telas: recusas de regra (valor inválido, saldo insuficiente, mesma conta) e falhas técnicas (banco, arquivo) viram mensagens com "o que aconteceu" e "o que fazer", e o detalhe técnico fica recolhido.
+- `EstadoApp` guarda as contas carregadas, a conta selecionada e a preferência de ocultar saldo; as telas observam as mudanças (`CONTAS`, `SELECAO`, `SALDO_OCULTO`, `OPERACAO`).
+- `SincronizadorContas` lê a lista de contas na abertura e, depois de cada operação confirmada, consulta o saldo das contas envolvidas e o copia para o estado. A tela nunca soma ou subtrai valores por conta própria: o saldo exibido é sempre o devolvido pelo serviço.
+- Controles ficam desabilitados durante a chamada (sem envio duplicado). A simulação não tem progresso parcial; o indicador é indeterminado e **Encerrar** cancela o `SwingWorker`, o que interrompe a espera e cancela as threads da simulação.
+- A formatação de moeda (`Moeda`, `R$ 1.234,56`) é só de apresentação e tem testes próprios (`MoedaTest`).
+
+---
+
 ## Testes
 
 ```bash
-mvn test                  # 77 testes unitários (exclui @Tag("integracao"))
+mvn test                  # 86 testes unitários (exclui @Tag("integracao"))
 mvn test -Pintegracao     # 23 testes de integração (exigem MariaDB e o banco "banco_teste")
 ```
 
@@ -279,6 +345,7 @@ mvn test -Pintegracao     # 23 testes de integração (exigem MariaDB e o banco 
 | domain | `ContaConcorrenciaTest`, `ContaTransferenciaConcorrenteTest` | 8 | depósitos/saques concorrentes, transferências opostas, ciclo de três contas |
 | simulacao | `CenarioSimulacaoTest`, `OperacaoBancariaThreadTest`, `SimulacaoConcorrenteTest` | 14 | plano determinístico, execução, esperado × obtido |
 | app | `BancoServicoTest` (repositories falsos), `ExtratoExportadorTest` | 29 | fluxo ponta a ponta sem banco, formatação e exportação |
+| app.ui | `MoedaTest` | 9 | formatação e leitura de valores em pt-BR |
 | persistence | `ConexaoFactoryTest` | 4 | configuração de conexão |
 | persistence | `ContaRepositoryIntegracaoTest`, `TransacaoRepositoryIntegracaoTest`, `BancoServicoIntegracaoTest` | 23 | JDBC real em `banco_teste` (`@Tag("integracao")`) |
 
@@ -439,12 +506,12 @@ não verificadas. A interface nunca recebe a `Conta`, somente `ContaResumo` (som
 | `exportarExtrato` | `long idConta`, `Path caminhoTxt` | `Path` gravado | `IllegalArgumentException` (sem `.txt`), `PersistenciaException`, `ExportacaoExtratoException` |
 | `executarSimulacao` | `ParametrosSimulacao` | `ExecucaoSimulacao` (contém o `ResultadoSimulacao` e as contas gravadas) | `IllegalArgumentException`, `InterruptedException`, `PersistenciaException` |
 
-Notas para quem integrar uma interface (Swing, JavaFX, web):
+Notas para quem integrar uma interface (a gráfica deste projeto, `app.ui`, já segue todas elas; vale também para JavaFX ou web):
 
 - As chamadas fazem JDBC, escrevem arquivo ou rodam a simulação (segundos): **não** as execute na thread de eventos da UI.
 - Após uma operação, consulte o saldo ao serviço em vez de somar ou subtrair na tela.
 - Se `PersistenciaException` ocorrer depois de uma operação, o saldo em memória **já mudou**; consulte o estado antes de tentar de novo.
-- `PersistenciaException` está no pacote `persistence`; uma camada de visão que não possa importar esse pacote precisará de uma exceção de aplicação que a traduza.
+- `PersistenciaException` está no pacote `persistence`; na interface gráfica, `ControladorBanco` a traduz em uma `Falha` com mensagem de usuário. Uma camada de visão que não possa importar esse pacote precisará de uma exceção de aplicação equivalente.
 
 ---
 
@@ -499,7 +566,7 @@ Saídas completas, com comando, data e ambiente no cabeçalho, estão em `docs/e
 | Titular 4 | 1.421.208,96 | 1.421.208,96 | 0,00 |
 | **Total** | **5.680.838,37** | **5.680.838,37** | **0,00** |
 
-**Suíte de testes:** `mvn test` → 77 testes, 0 falhas (`mvn-test-REAL.txt`); `mvn test -Pintegracao` → 23 testes, 0 falhas (`mvn-integracao-REAL.txt`).
+**Suíte de testes** `mvn test` → 86 testes, 0 falhas (`mvn-test-REAL.txt`); `mvn test -Pintegracao` → 23 testes, 0 falhas (`mvn-integracao-REAL.txt`). Desde então foi acrescentado `MoedaTest` (9 casos), que eleva a suíte unitária a 86.
 
 O mesmo volume de operações que corrompe o saldo em `ContaInsegura` fica exato em `Conta`. Os arquivos
 `testes-concorrencia-*.txt` são anteriores e foram gerados por um executor improvisado; ficam apenas como histórico.

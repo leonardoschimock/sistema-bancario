@@ -106,6 +106,69 @@ public final class Componentes {
         return new AcaoCircular(icone, rotulo);
     }
 
+    /** Brasão do Solid Bank com a altura pedida (recurso {@code /app/ui/solid-bank-brasao.png}). */
+    public static Logo logo(int altura) {
+        return new Logo(altura);
+    }
+
+    /** Ícone do aplicativo (janela/barra de tarefas) ou {@code null} se o recurso não existir. */
+    public static java.awt.Image iconeDoAplicativo() {
+        return carregarImagem("/app/ui/solid-bank-icone.png");
+    }
+
+    /**
+     * Cartão clicável da conta usada numa operação: avatar, titular, número e (opcional) saldo atual,
+     * no estilo "Pagando com". Sem conta, mostra o convite para escolher uma.
+     */
+    public static Cartao cartaoContaAtual(ContaResumo conta, boolean mostrarSaldo, boolean saldoOculto) {
+        Cartao cartao = new Cartao(new BorderLayout(Medida.ESP_3, 0));
+        cartao.setBorder(new EmptyBorder(Medida.ESP_3, Medida.ESP_4, Medida.ESP_3, Medida.ESP_4));
+        Pilha dados = pilha();
+        if (conta == null) {
+            dados.adicionar(rotulo("Selecione uma conta", Fonte.SUBTITULO, Cor.TEXTO_SECUNDARIO));
+            cartao.add(centroVertical(dados), BorderLayout.CENTER);
+            cartao.getAccessibleContext().setAccessibleName("Selecione uma conta");
+        } else {
+            dados.adicionar(textoQuebrado(conta.titular(), Fonte.SUBTITULO, Cor.TEXTO));
+            dados.adicionar(rotulo("Conta n\u00ba " + conta.id(), Fonte.ROTULO, Cor.TEXTO_SECUNDARIO));
+            String atual = null;
+            if (mostrarSaldo) {
+                atual = "Atual: " + (saldoOculto ? SALDO_OCULTO : Moeda.formatar(conta.saldo()));
+                dados.adicionar(rotulo(atual, Fonte.ROTULO, Cor.TEXTO));
+            }
+            cartao.add(centroVertical(new Avatar(conta.titular(), Medida.AVATAR)), BorderLayout.WEST);
+            cartao.add(centroVertical(dados), BorderLayout.CENTER);
+            cartao.getAccessibleContext().setAccessibleName("Conta " + conta.id() + ", " + conta.titular()
+                    + (atual == null ? "" : ", " + atual));
+        }
+        cartao.add(centroVertical(new JLabel(Icones.de(Icone.CHEVRON_DIREITA, Medida.ICONE_PEQ + Medida.ESP_1,
+                Cor.TEXTO_SECUNDARIO))), BorderLayout.EAST);
+        return cartao;
+    }
+
+    /** Folha com a lista de contas; {@code aoEscolher} roda depois que a folha fecha. */
+    public static void escolherConta(Component dono, ContaResumo atual, Supplier<List<ContaResumo>> contas,
+                                     BooleanSupplier saldoOculto, Consumer<ContaResumo> aoEscolher) {
+        Pilha corpo = pilha();
+        corpo.adicionar(rotulo("Escolher conta", Fonte.SECAO, Cor.TEXTO)).espaco(Medida.ESP_3);
+        Folha[] folha = new Folha[1];
+        List<ContaResumo> lista = contas.get();
+        if (lista.isEmpty()) {
+            corpo.adicionar(textoQuebrado("Nenhuma conta cadastrada.", Fonte.CORPO, Cor.TEXTO_SECUNDARIO));
+        }
+        for (ContaResumo candidata : lista) {
+            boolean ativa = atual != null && atual.id() == candidata.id();
+            Cartao cartao = cartaoConta(candidata, ativa, saldoOculto.getAsBoolean());
+            cartao.aoClicar(() -> {
+                folha[0].fechar();
+                aoEscolher.accept(candidata);
+            });
+            corpo.adicionar(cartao).espaco(Medida.ESP_2);
+        }
+        folha[0] = new Folha(dono, corpo);
+        folha[0].mostrar();
+    }
+
     /** Botão circular só com ícone; {@code descricao} é o nome acessível. */
     public static BotaoIcone botaoIcone(Icone icone, String descricao, boolean sobrePrimaria) {
         return new BotaoIcone(icone, descricao, sobrePrimaria);
@@ -610,6 +673,19 @@ public final class Componentes {
         private final Icone icone;
         private int altura = Medida.ALTURA_BOTAO;
 
+        /** Recuo horizontal interno: botões fantasma compactos ficam rentes à margem do conteúdo. */
+        private int paddingX() {
+            if (altura == Medida.ALTURA_BOTAO) {
+                return Medida.ESP_6;
+            }
+            return estilo == Estilo.FANTASMA ? Medida.ESP_1 : Medida.ESP_4;
+        }
+
+        /** Quanto do botão é só respiro lateral e deve "invadir" a margem para alinhar o texto. */
+        public int recuoVisual() {
+            return estilo == Estilo.FANTASMA && altura != Medida.ALTURA_BOTAO ? paddingX() : 0;
+        }
+
         /** Versão mais baixa, para barras superiores. */
         public Botao compacto() {
             this.altura = Medida.ALTURA_BOTAO_COMPACTO;
@@ -639,7 +715,7 @@ public final class Componentes {
         @Override
         public Dimension getPreferredSize() {
             FontMetrics fm = getFontMetrics(getFont());
-            int largura = fm.stringWidth(getText()) + 2 * Medida.ESP_6;
+            int largura = fm.stringWidth(getText()) + 2 * paddingX();
             if (icone != null) {
                 largura += Medida.ICONE + Medida.ESP_2;
             }
@@ -687,7 +763,7 @@ public final class Componentes {
                 g2.setFont(getFont());
                 FontMetrics fm = g2.getFontMetrics();
                 int reservaIcone = icone != null ? Medida.ICONE + Medida.ESP_2 : 0;
-                String texto = elipse(getText(), fm, w - 2 * Medida.ESP_4 - reservaIcone);
+                String texto = elipse(getText(), fm, w - 2 * paddingX() - reservaIcone);
                 int conteudo = fm.stringWidth(texto) + reservaIcone;
                 int x = (w - conteudo) / 2;
                 if (icone != null) {
@@ -754,14 +830,95 @@ public final class Componentes {
                     g2.setStroke(new BasicStroke(Medida.BORDA_FOCO));
                     g2.draw(new Ellipse2D.Float(x + 1, 1, Medida.ACAO_CIRCULO - 2, Medida.ACAO_CIRCULO - 2));
                 }
-                Icones.de(icone, Medida.ICONE, Cor.PRIMARIA).paintIcon(this, g2,
-                        x + (Medida.ACAO_CIRCULO - Medida.ICONE) / 2, (Medida.ACAO_CIRCULO - Medida.ICONE) / 2);
+                Icones.de(icone, Medida.ICONE_ACAO, Cor.PRIMARIA).paintIcon(this, g2,
+                        x + (Medida.ACAO_CIRCULO - Medida.ICONE_ACAO) / 2, (Medida.ACAO_CIRCULO - Medida.ICONE_ACAO) / 2);
                 g2.setFont(getFont());
                 FontMetrics fm = g2.getFontMetrics();
                 String texto = elipse(rotulo, fm, w);
                 g2.setColor(Cor.TEXTO);
                 g2.drawString(texto, (w - fm.stringWidth(texto)) / 2,
                         Medida.ACAO_CIRCULO + Medida.ESP_2 + fm.getAscent());
+            } finally {
+                g2.dispose();
+            }
+        }
+    }
+
+    // =============================================================== logo
+
+    private static final java.util.Map<String, java.awt.image.BufferedImage> IMAGENS = new java.util.HashMap<>();
+
+    private static java.awt.image.BufferedImage carregarImagem(String recurso) {
+        return IMAGENS.computeIfAbsent(recurso, r -> {
+            try (java.io.InputStream in = Componentes.class.getResourceAsStream(r)) {
+                return in == null ? null : javax.imageio.ImageIO.read(in);
+            } catch (java.io.IOException e) {
+                return null;
+            }
+        });
+    }
+
+    /** Reduz em passos de metade (qualidade melhor que um único salto) até a altura pedida. */
+    private static java.awt.image.BufferedImage reduzir(java.awt.image.BufferedImage origem, int altura) {
+        java.awt.image.BufferedImage atual = origem;
+        while (atual.getHeight() / 2 >= altura) {
+            atual = passo(atual, atual.getWidth() / 2, atual.getHeight() / 2);
+        }
+        int largura = Math.max(1, Math.round(atual.getWidth() * (altura / (float) atual.getHeight())));
+        return passo(atual, largura, altura);
+    }
+
+    private static java.awt.image.BufferedImage passo(java.awt.image.BufferedImage origem, int largura, int altura) {
+        java.awt.image.BufferedImage destino = new java.awt.image.BufferedImage(largura, altura,
+                java.awt.image.BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2 = destino.createGraphics();
+        try {
+            g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+            g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+            g2.drawImage(origem, 0, 0, largura, altura, null);
+        } finally {
+            g2.dispose();
+        }
+        return destino;
+    }
+
+    /** Brasão do banco. Sem o recurso, cai para o ícone vetorial de banco. */
+    public static final class Logo extends ComponenteAcessivel {
+        private static final long serialVersionUID = 1L;
+        private final int altura;
+        private transient java.awt.image.BufferedImage imagem;
+
+        Logo(int altura) {
+            this.altura = altura;
+            java.awt.image.BufferedImage original = carregarImagem("/app/ui/solid-bank-brasao.png");
+            this.imagem = original == null ? null : reduzir(original, altura);
+            getAccessibleContext().setAccessibleName("Solid Bank");
+        }
+
+        @Override
+        public Dimension getPreferredSize() {
+            return new Dimension(imagem == null ? altura : imagem.getWidth(), altura);
+        }
+
+        @Override
+        public Dimension getMinimumSize() {
+            return getPreferredSize();
+        }
+
+        @Override
+        public Dimension getMaximumSize() {
+            return getPreferredSize();
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = suave(g);
+            try {
+                if (imagem != null) {
+                    g2.drawImage(imagem, 0, 0, null);
+                } else {
+                    Icones.de(Icone.BANCO, altura, Cor.SOBRE_PRIMARIA).paintIcon(this, g2, 0, 0);
+                }
             } finally {
                 g2.dispose();
             }
@@ -1927,24 +2084,7 @@ public final class Componentes {
         }
 
         private void abrirFolha() {
-            List<ContaResumo> contas = fonte.get();
-            Pilha corpo = pilha();
-            corpo.adicionar(rotulo("Escolher conta", Fonte.SECAO, Cor.TEXTO)).espaco(Medida.ESP_3);
-            Folha[] folha = new Folha[1];
-            if (contas.isEmpty()) {
-                corpo.adicionar(textoQuebrado("Nenhuma conta cadastrada.", Fonte.CORPO, Cor.TEXTO_SECUNDARIO));
-            }
-            for (ContaResumo candidata : contas) {
-                boolean atual = conta != null && conta.id() == candidata.id();
-                Cartao cartao = cartaoConta(candidata, atual, saldoOculto.getAsBoolean());
-                cartao.aoClicar(() -> {
-                    folha[0].fechar();
-                    aoEscolher.accept(candidata);
-                });
-                corpo.adicionar(cartao).espaco(Medida.ESP_2);
-            }
-            folha[0] = new Folha(this, corpo);
-            folha[0].mostrar();
+            escolherConta(this, conta, fonte, saldoOculto, aoEscolher);
         }
     }
 
@@ -2034,6 +2174,9 @@ public final class Componentes {
             JLabel rotulo = rotulo(titulo, Fonte.TITULO, Cor.TEXTO);
             add(rotulo, BorderLayout.CENTER);
             if (acoes.length > 0) {
+                if (acoes[acoes.length - 1] instanceof Botao ultimo) {
+                    setBorder(new EmptyBorder(0, Medida.MARGEM_TELA, 0, Medida.MARGEM_TELA - ultimo.recuoVisual()));
+                }
                 JPanel direita = new JPanel(new GridBagLayout());
                 direita.setOpaque(false);
                 GridBagConstraints c = new GridBagConstraints();
